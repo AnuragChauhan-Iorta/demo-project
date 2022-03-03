@@ -10,7 +10,7 @@ const SCHEMA = require('../constant/schema');
 const MSG = require("../constant/msg");
 const custom_validation_list = require('../exception/custom-exception-list');
 const req = require('express/lib/request');
-const InternalError = require('../exception/internal.error');
+// const InternalError = require('../exception/internal.error');
 
 class Vehicle extends BaseManager {
     constructor(){

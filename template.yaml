@@ -81,7 +81,7 @@ Resources:
       StageName: prod
       Variables:
         ServerlessExpressLambdaFunctionName: !Ref DemoAPIFunctions
-        CognitoArn: !GetAtt CognitoUserPool.Arn
+        # CognitoArn: !GetAtt CognitoUserPool.Arn
   
   
   # Each Lambda function is defined by properties:

@@ -136,13 +136,13 @@ class ResetPassword{
 
             var RespData = {
                 code: 200,
-                status: "Success",
-                data: sanitize_data
+                status: "Success"
+                // data: sanitize_data
             }
 
             if(resp?.status == 'Success') {
                 const response = await this.reset_password.resetPassword({...sanitize_data,otp:otp});
-                RespData['response'] = response;
+                RespData['response'] = {...response, message: "OTP Sent Successfully"};
             } else {
                 throw resp;
             }

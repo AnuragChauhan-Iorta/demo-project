@@ -121,14 +121,14 @@ class ResetPassword {
             pre_time.setHours(pre_time.getHours() - MIN_HOUR);
             let min_time = pre_time.toISOString();
 
-            // if((data.Items[data.Count - 1].GeneratedAt < max_time) && (data.Items[data.Count - 1].GeneratedAt > min_time) ){
-            if((data.Items[0].GeneratedAt < max_time) && (data.Items[0].GeneratedAt > min_time) ){                
-                // if(data.Items[data.Count - 1].VerifiedAt) {
-                if(data.Items[0].VerifiedAt) {
+            if((data.Items[data.Count - 1].GeneratedAt < max_time) && (data.Items[data.Count - 1].GeneratedAt > min_time) ){
+            // if((data.Items[0].GeneratedAt < max_time) && (data.Items[0].GeneratedAt > min_time) ){                
+                if(data.Items[data.Count - 1].VerifiedAt) {
+                // if(data.Items[0].VerifiedAt) {
                     throw new InternalError(msg.INTERNAL_ERROR, 'OTP Already Validated');
                 }
-                // return data.Items[data.Count - 1];
-                return data.Items[0];
+                return data.Items[data.Count - 1];
+                // return data.Items[0];
             }
             throw new InternalError(msg.INTERNAL_ERROR, 'OTP Validity Exceeded, generate new one');
             // return null;
