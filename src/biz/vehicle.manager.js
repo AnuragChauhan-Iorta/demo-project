@@ -54,7 +54,7 @@ class Vehicle extends BaseManager {
                 VehicleFullDetails: this.sanitizeArray(req.body.VehicleFullDetails),
                 VehicleImage_ID: this.sanitizeArray(req.body.VehicleImage_ID),
                 Rating:2.5,
-                CreatedAt: new Date().toLocaleString(),
+                CreatedAt: this.utils.getCurrentTime(),
                 CreatedBy: req.body.CreatedBy || ""
             };
 
@@ -88,8 +88,8 @@ class Vehicle extends BaseManager {
                             ID: this.utils.generateUUID(),
                             ImageName: element.originalname,
                             ImageFile: element.buffer.toString('base64'), // "data:image/jpeg;base64," -- removed
-                            CreatedAt: new Date().toLocaleDateString(),
-                            Uploadedat: new Date().toLocaleDateString(),
+                            CreatedAt: this.utils.getCurrentTime(),
+                            Uploadedat: this.utils.getCurrentTime(),
                             Uploadedby: req.body.CreatedBy || ""
                         };
 
@@ -232,5 +232,24 @@ class Vehicle extends BaseManager {
             throw new InternalError(MSG.INTERNAL_ERROR, err.message);
         }
     }
+
+    async getPopularVehicleList(req) {
+        try{
+            const resp = {
+                "latest": await this.VehicleRepository.getLatestVehicle(),
+                "popular_car": await this.VehicleRepository.getPopularVehicle("car"),
+                "popular_bike": await this.VehicleRepository.getPopularVehicle("bike"),
+                "popular_truck": await this.VehicleRepository.getPopularVehicle("tractor"),
+                "popular_auto": await this.VehicleRepository.getPopularVehicle("auto")
+            }
+            return resp;
+        }catch(err) {
+            if(custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(MSG.INTERNAL_ERROR, err.message);
+        }
+    }
+
 }
 module.exports = Vehicle;

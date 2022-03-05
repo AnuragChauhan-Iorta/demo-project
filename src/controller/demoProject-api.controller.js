@@ -125,8 +125,25 @@ class demoProjectApi extends base_controller {
         }
     }
 
+    async getPopularVehicleList(req, res) {
+        try{
+            console.log('Listing Popular Vehicles');
+            const PopularVehicles = await this.vehical.getPopularVehicleList(req);
+            this.ok(res, PopularVehicles)
+        }catch(err) {
+            this.error(res, err);
+        }
+    }
     
-    
+    // async getLatestVehicle(req, res) {
+    //     try {  
+    //         console.log('Listing Latest Vehicle');
+    //         const latestVehicles = await this.vehical.getLatestVehicle();
+    //         this.ok(res, latestVehicles)
+    //     }catch(err) {
+    //         this.error(res, err);
+    //     }
+    // }
 
 }
 module.exports = demoProjectApi;

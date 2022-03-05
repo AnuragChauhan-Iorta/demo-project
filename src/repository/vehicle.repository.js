@@ -5,7 +5,7 @@ const msg = require('../constant/msg');
 
 
 class VehicleRepository {
-    constructor() { this.INTERNAL_ERROR }
+    constructor() {  }
 
     async addVehicle(request) {
         try{
@@ -114,12 +114,12 @@ class VehicleRepository {
             } while (data.LastEvaluatedKey);
 
             const Items = scanResults;
+            return Items;
             var index = 0;
             for(const item of Items){
                 if (item.VehicleImage_ID) {
                     let ImageData = await this.VehicleImage(item.VehicleImage_ID)
                     Items[index]['IMAGES'] = ImageData;
-
                 }
                 index++;
             }
@@ -209,7 +209,71 @@ class VehicleRepository {
             return ((parseFloat(PreRating) + parseFloat(newRating)) / 2).toFixed(1) || 2.5;
 
         } catch (err) {
-            
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }
+
+
+
+    async getPopularVehicle(VehicleType_PARAM=undefined) {
+        try {
+            if(VehicleType_PARAM) {
+                let QueryParam = {
+                    TableName: TABLE.TABLE_VEHICLE,
+                    IndexName: 'VehicleType-Rating-index',
+                    KeyConditionExpression: " VehicleType = :vehicleType",
+                    ExpressionAttributeValues: {
+                        ":vehicleType": VehicleType_PARAM,
+                    },
+                    ScanIndexForward: false, // Descending
+                    Limit: 5
+                 }
+             
+                let CURRENT_RATING = await documentClient.query(QueryParam).promise();
+                return CURRENT_RATING;
+            }
+            return null;
+        } catch (err) {
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }
+
+    async getLatestVehicle(){
+        // this will load all last inserted of VehicleType and calculate latest among them
+        try {
+            var resp = [];
+            for(const vehicle_type of ["car","bike","auto","tractor"]) {
+                let QueryParam = {
+                    TableName: TABLE.TABLE_VEHICLE,
+                    IndexName: 'VehicleType-CreatedAt-index',
+                    KeyConditionExpression: " VehicleType = :vehicleType",
+                    ExpressionAttributeValues: {
+                        ":vehicleType": vehicle_type,
+                    },
+                    ScanIndexForward: false, // Descending
+                    Limit: 1
+                }
+                
+                let LatestRecord = await documentClient.query(QueryParam).promise();
+                if(LatestRecord.Items[0]) {
+                    resp.push(LatestRecord.Items[0]);
+                }
+            }
+            return await resp.sort((a,b) => {
+                // let first_date = new Date(a.CreatedAt);
+                // let sec_date = new Date(b.CreatedAt);
+                if(a.CreatedAt == b.CreatedAt){
+                    return 0;
+                } else if(a.CreatedAt < b.CreatedAt) {
+                    return 1;
+                } else if(a.CreatedAt > b.CreatedAt) {
+                    return -1;
+                }
+
+            }); 
+            // return resp;
+        } catch (err) {
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
     }
 
