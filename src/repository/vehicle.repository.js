@@ -1,6 +1,7 @@
 const { AWS, documentClient } = require('../services/aws.service');
 const TABLE = require('../constant/table');
 const InternalError = require('../exception/internal.error');
+const custom_validation_list = require('../exception/custom-exception-list');
 const msg = require('../constant/msg');
 
 
@@ -124,15 +125,72 @@ class VehicleRepository {
                 index++;
             }
             return Items;
+            let customerData = await this.CustomerList(req.params.id)
+            console.log("customerDAta",req.params.id)
+            return {"CustomerDetails":customerData, "VehicleDetails":Items};
+            // if (Items.VehicleImage_ID.length) {
+            //     console.log("Log 1")
+
+            // }
+            // // if (offset && limit) Items = scanResults.slice(offset, limit + offset);
+            // return { Items, LastEvaluatedKey: data.LastEvaluatedKey,Imagedata, Count};
         }
         catch (err) {
             console.log('Error Raised Here', err.message);
             throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
     }
+    async VehicleDetails(req) {
+        console.log("In Repo")
+        try {
+            const params = {
+                TableName: TABLE.TABLE_VEHICLE
+            };
+            if (req.params.id) {
+                params.FilterExpression = "ID = :id";
+                params.ExpressionAttributeValues = {
+                    ":id": req.params.id
+                }
+            }
+            let scanResults = []
+            let data, Count = 0;
+            do {
+                data = await documentClient.scan(params).promise();
+                scanResults.push(...data.Items);
+                Count += data.Count;
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+            } while (data.LastEvaluatedKey);
+
+            const Items = scanResults;
+            // return Items
+
+            var index = 0;
+            for (const item of Items) {
+                if (item.VehicleImage_ID) {
+                    // console.log("Log 1",typeof this.VehicleImage)
+                    let ImageData = await this.VehicleImage(item.VehicleImage_ID)
+                    // let CustomerData = await this.CustomerList(req)
+                    // console.log(CustomerData,"CustomerData")
+                    Items[index]['IMAGES'] = ImageData;
+
+                }
+                index++;
+            }
+            return Items;
+
+        }
+
+        catch (err) {
+            console.log('Error Raised Here', err.message);
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+
+
+    }
+
     async VehicleImage(ImageID_arr) {
         // will load vehicleImage data
-        try{
+        try {
             var image_res = [];
             for(const image_id of ImageID_arr) {
                 let params = {
@@ -142,7 +200,6 @@ class VehicleRepository {
                         ":id": image_id
                     }
                 };
-
                 let scanResults = [];
                 let data, Count = 0;
                 do {
@@ -154,13 +211,46 @@ class VehicleRepository {
                 if(scanResults) {
                     image_res.push(scanResults[0]);
                 }
-            } 
+            }
             return image_res;
-        } catch(err) {
+        } catch (err) {
             console.log('Error Raied', err.message);
         }
     }
-    
+    async CustomerList(id) {
+        // console.log("In Fun")
+        try {
+            // this will load all customer data 
+            const params = {
+                TableName: TABLE.TABLE_CUSTOMER
+            };
+            if (id) {
+                params.FilterExpression = " ID= :id ";
+                params.ExpressionAttributeValues = {
+                    ":id":id
+                }
+            }
+
+            let scanResults = [];
+            let data, Count = 0;
+            do {
+                data = await documentClient.scan(params).promise();
+                scanResults.push(...data.Items);
+                Count += data.Count;
+                params.ExclusiveStartKey = data.LastEvaluatedKey;
+            } while (data.LastEvaluatedKey);
+
+            const Items = scanResults;
+            // if (offset && limit) Items = scanResults.slice(offset, limit + offset);
+            return { Items};
+        } catch (err) {
+            if (custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }
+
 
     async bookTestDrive(request) {
         try {

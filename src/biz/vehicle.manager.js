@@ -10,7 +10,6 @@ const SCHEMA = require('../constant/schema');
 const MSG = require("../constant/msg");
 const custom_validation_list = require('../exception/custom-exception-list');
 const req = require('express/lib/request');
-// const InternalError = require('../exception/internal.error');
 
 class Vehicle extends BaseManager {
     constructor(){
@@ -145,7 +144,6 @@ class Vehicle extends BaseManager {
     async getVehicleList (req,res) {
         try {
             const response = await this.VehicleRepository.VehicleList(req);
-            // const result = await this.VehicleRepository.VehicleImage(req);
             const RespData = {
                 status: 200,
                 msg: "Success",
@@ -251,5 +249,22 @@ class Vehicle extends BaseManager {
         }
     }
 
+    async getVehicleDetail(req,res) {
+        console.log("In Manager")
+        try {
+            const response = await this.VehicleRepository.VehicleDetails(req);
+            const RespData = {
+                status: 200,
+                msg: "Success",
+                vehicleDetails: response
+            }
+            return RespData;
+        }catch(err) {
+            if(custom_validation_list.includes(err.name || "")) {
+                return err;
+            }
+            return new InternalError(MSG.INTERNAL_ERROR, err);
+        }
+    }
 }
 module.exports = Vehicle;

@@ -59,6 +59,9 @@ app.post('/validate-otp', demoProjectApi.validateOTP);
 app.post('/addVehicle', base64_upload.array('vehicle_images', 10), demoProjectApi.addNewVehicle);
 app.get('/vehicle/customer/:id?', demoProjectApi.getVehicleList);
 
+// vehicale Details along Imagedata
+app.get('/vehicleDetails/:id', demoProjectApi.getVehicleById);
+
 
 app.get('/temp/:id',async (req, res) => {
   const resp = await new temp().validateResetLimit(req.params.id);

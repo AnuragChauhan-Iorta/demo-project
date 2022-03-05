@@ -102,6 +102,17 @@ class demoProjectApi extends base_controller {
             this.error(res, err);
         }
     }
+    async getVehicleById(req, res) {
+        console.log("In demo")
+        try{
+            console.log('Getting  vehicle detail');
+            const getVehicleDetail = await this.vehical.getVehicleDetail(req);
+            this.ok(res, getVehicleDetail)
+        } catch (err) {
+            
+            this.error(res, err);
+        }
+    }
 
 
 
