@@ -16,63 +16,65 @@ Transform:
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
 
-  # CognitoUserPool:
-  #   Type: AWS::Cognito::UserPool
-  #   DeletionPolicy: Retain
-  #   Properties:
-  #     UserPoolName: auth_pool
-  #     Policies:
-  #       PasswordPolicy:
-  #         MinimumLength: 8
-  #         RequireLowercase: true
-  #         RequireNumbers: true
-  #         RequireSymbols: true
-  #         RequireUppercase: true
-  #         TemporaryPasswordValidityDays: 7
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    Properties:
+      UserPoolName: auth_pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
 
-  # CognitoUserPoolClient:
-  #   Type: AWS::Cognito::UserPoolClient
-  #   # DependsOn: CognitoRenewalApiResourceServer
-  #   Properties:
-  #     UserPoolId: !Ref CognitoUserPool
-  #     TokenValidityUnits: 
-  #       AccessToken: hours
-  #       IdToken: hours
-  #       RefreshToken: days
-  #     AccessTokenValidity: 4
-  #     IdTokenValidity: 8
-  #     RefreshTokenValidity: 1
-  #     AllowedOAuthFlows:
-  #       - client_credentials
-  #     AllowedOAuthFlowsUserPoolClient: true
-  #     # AllowedOAuthScopes: # You can add your custom scopes below
-  #     #   - https://api.iorta.in/on-claim
-  #     #   - https://api.iorta.in/on-payment
-  #     #   - https://api.iorta.in/read
-  #     #   - https://api.iorta.in/write
-  #     ClientName: demoProject
-  #     GenerateSecret: true
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    # DependsOn: CognitoRenewalApiResourceServer
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      TokenValidityUnits: 
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 4
+      IdTokenValidity: 8
+      RefreshTokenValidity: 1
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes: # You can add your custom scopes below
+        - openid
+        - email
+      #   - https://api.iorta.in/on-claim
+      #   - https://api.iorta.in/on-payment
+      #   - https://api.iorta.in/read
+      #   - https://api.iorta.in/write
+      ClientName: demoProject
+      GenerateSecret: true
 
-  # CognitoUserPoolDomain:
-  #   Type: AWS::Cognito::UserPoolDomain
-  #   Properties:
-  #     # CustomDomainConfig: // Set this for custom domain & ssl config
-  #     Domain: 
-  #       Fn::Join:
-  #         - "-"
-  #         - - !Ref AWS::AccountId
-  #           - auth
-  #     UserPoolId: !Ref CognitoUserPool
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      # CustomDomainConfig: // Set this for custom domain & ssl config
+      Domain: 
+        Fn::Join:
+          - "-"
+          - - !Ref AWS::AccountId
+            - auth
+      UserPoolId: !Ref CognitoUserPool
 
-  # ApiGatewayAuthorizer:
-  #   Type: AWS::ApiGateway::Authorizer
-  #   Properties:
-  #     Name: CognitoAuthorizer
-  #     Type: COGNITO_USER_POOLS
-  #     IdentitySource: method.request.header.Authorization
-  #     ProviderARNs: 
-  #       - !GetAtt CognitoUserPool.Arn
-  #     RestApiId: !Ref ApiGatewayApi
+  ApiGatewayAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      ProviderARNs: 
+        - !GetAtt CognitoUserPool.Arn
+      RestApiId: !Ref ApiGatewayApi
   
   ApiGatewayApi:
     Type: AWS::Serverless::Api
@@ -109,8 +111,9 @@ Resources:
               - dynamodb:Query
               - dynamodb:UpdateItem
               - dynamodb:BatchGetItem
-              - sqs:SendMessage
-              - sqs:ReceiveMessage
+              # - sqs:SendMessage
+              # - sqs:ReceiveMessage
+              - sns:Publish
               - states:*
             Resource: "*"
       Environment:

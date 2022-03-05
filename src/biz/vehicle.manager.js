@@ -53,11 +53,11 @@ class Vehicle extends BaseManager {
                 EngineCapcityCC: req.body.EngineCapcityCC || "",
                 VehicleFullDetails: this.sanitizeArray(req.body.VehicleFullDetails),
                 VehicleImage_ID: this.sanitizeArray(req.body.VehicleImage_ID),
+                Rating:2.5,
                 CreatedAt: new Date().toLocaleString(),
                 CreatedBy: req.body.CreatedBy || ""
             };
 
-            
 
             // return sanitize_data
             const validationResult = this.validate(SCHEMA.ADD_Vehical, sanitize_data);
@@ -65,9 +65,7 @@ class Vehicle extends BaseManager {
                 if(!await this.CustomerRepository.validCustomerId(sanitize_data.CreatedBy)) {
                     throw new ValidationError(MSG.VALIDATION_ERROR, "Invalid Customer Id");
                 }
-
                 const response = await this.VehicleRepository.addVehicle(sanitize_data);
-
                 if(response === null) {
                     throw new InternalError(MSG.INTERNAL_ERROR, "Vehicle Add issue");
                 }
@@ -135,7 +133,7 @@ class Vehicle extends BaseManager {
             if(custom_validation_list.includes(err.name || "")) {
                 return err;
             }
-            return new InternalError(MSG.INTERNAL_ERROR, err);
+            return new InternalError(MSG.INTERNAL_ERROR, err.message);
         }
     }
     generateUUID(){
@@ -159,6 +157,79 @@ class Vehicle extends BaseManager {
                 return err;
             }
             return new InternalError(MSG.INTERNAL_ERROR, err);
+        }
+    }
+
+
+    async bookTestDrive(req) {
+        try {
+            const sanitize_data = {
+                ID: this.utils.generateUUID(),
+                CustomerID: req.body.CustomerID || undefined,
+                VehicleID: req.body.VehicleID || undefined,
+                SlotDateTime: req.body.SlotDateTime || undefined,
+                CreatedAt: this.utils.getCurrentTime()
+            };
+
+            const validSlot = this.validate(SCHEMA.BOOK_SLOT, sanitize_data);
+            if(validSlot.valid) {
+                const response = await this.VehicleRepository.bookTestDrive(sanitize_data);
+                const RespData = {
+                    status: 200,
+                    msg: "Success",
+                    data: response || `Slot Booked Successfully at ${sanitize_data.SlotDateTime}`
+                }
+                return RespData;
+            }
+            throw new ValidationError(MSG.VALIDATION_ERROR, validSlot.errors);
+        } catch (err) {
+            if(custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(MSG.INTERNAL_ERROR, err);
+        }
+    }
+
+
+    async addUserRating(req) {
+        try {
+            const sanitize_data = {
+                ID: this.utils.generateUUID(),
+                CustomerID: req.body.CustomerID || undefined,
+                VehicleID: req.body.VehicleID || undefined,
+                TestDriveID: req.body.TestDriveID || undefined,
+                Rating: req.body.Rating || undefined,
+                Comments: req.body.Comments || undefined,
+                CreatedAt: this.utils.getCurrentTime()
+            };
+
+            const validRating = this.validate(SCHEMA.USER_RATING, sanitize_data);
+            if(validRating.valid) {
+                const response = await this.VehicleRepository.addUserRating(sanitize_data);
+
+                // update Vehicle Rating inside vehicle table by making average of it
+                var custom_err_msg = "";
+                if(response) {
+                    let newRating = await this.VehicleRepository.calculateAvgRating(sanitize_data.VehicleID, sanitize_data.Rating);
+                    let updateRes = await this.VehicleRepository.updateVehicleDetails({Rating: newRating}, sanitize_data.VehicleID);    
+                    const RespData = {
+                        status: 200,
+                        msg: "Success",
+                        data: response || `User Rating Successfully Added with ${sanitize_data.Rating} Rating`
+                    }
+                    if(!updateRes) {
+                        RespData['extra'] = "Unable to update Vehicle Average Rating";
+                    }
+                    return RespData;
+                }
+            }
+            
+            throw new ValidationError(MSG.VALIDATION_ERROR, validRating.errors);
+        } catch (err) {
+            if(custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(MSG.INTERNAL_ERROR, err.message);
         }
     }
 }

@@ -66,5 +66,13 @@ app.get('/temp/:id',async (req, res) => {
 });
 
 
+
+app.post('/userRating', demoProjectApi.addUserRating );
+
+app.post('/bookTestDrive', demoProjectApi.bookTestDrive );
+
+
+
+
 const server = awsServerlessExpress.createServer(app);
 exports.handle = (event, context) => awsServerlessExpress.proxy(server, event, context);

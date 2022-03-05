@@ -1,0 +1,42 @@
+{
+    "id": "/BookSlot",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Book Slot",
+    "type": "object",
+    "additionalProperties": true,
+    "required": ["ID", "CustomerID", "VehicleID", "SlotDateTime", "CreatedAt"],
+    "properties": {
+        "ID": {
+            "type": "string",
+            "description": "Unique ID"
+        },
+        "CustomerID": {
+            "type": "string",
+            "message": {
+                "required": "Customer ID is required",
+                "pattern": "Customer ID is required"
+            }
+        },
+        "VehicleID": {
+            "type": "string",
+            "message": {
+                "required": "Vehicle ID is required",
+                "pattern": "Vehicle ID is required"
+            }
+        },
+        "SlotDateTime": {
+            "type": "string",
+            "message": {
+                "required": "Slot Date Time is required",
+                "pattern": "Slot Date Time is required"
+            }
+        },
+        "CreatedAt": {
+            "type": "string",
+            "message": {
+                "required": "CreatedAt is required",
+                "pattern": "CreatedAt is required"
+            }
+        }
+    }
+}

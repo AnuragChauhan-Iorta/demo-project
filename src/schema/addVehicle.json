@@ -12,7 +12,8 @@
         "VehicleNumber",
         "RegistrationPlace",
         "Currentlocation",
-        "NoOfOwners"
+        "NoOfOwners",
+        "Rating"
     ],
     "properties": {
         "ID": {
@@ -20,10 +21,20 @@
             "description": "Unique ID"
         },
         "VehicleServiceType": {
-            "type":"string" 
+            "type":"string",
+            "enum": ["buy", "sell", "rental"],
+            "message": {
+                "required": "Please enter the Vehicle Service Type as an input: buy, sell and rental.",
+                "pattern": "Please enter the Vehicle Service Type as an input: buy, sell and rental."
+            }
         },
         "VehicleType": {
-            "type":"string"
+            "type":"string",
+            "enum": ["car", "bike", "tractor", "auto"],
+            "message": {
+                "required": "Please enter the Vehicle Type as an input: car, bike and tractor.",
+                "pattern": "Please enter the Vehicle Type as an input: car, bike and tractor."
+            }
         },
         "VehicleNumber": {
             "type":"string"   
@@ -87,6 +98,10 @@
                 "type":"string"
             },
             "description": "Vehicle Image Id"
+        },
+        "Rating": {
+            "type": "number",
+            "description": "Rating Date"
         },
         "CreatedAt": {
             "type": "string",

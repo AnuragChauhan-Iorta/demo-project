@@ -8,15 +8,21 @@ class VehicleRepository {
     constructor() { this.INTERNAL_ERROR }
 
     async addVehicle(request) {
-        console.log(`New Vehicle Adding: ${JSON.stringify(request)}`);
-        const params = {
-            TableName: TABLE.TABLE_VEHICLE,
-            Item: request
-        };
-        const data = await documentClient.put(params).promise();
-        console.log('Inserted New Vehicle: ', data); //{}
-        if (data) return data;
-        return null;
+        try{
+            console.log(`New Vehicle Adding: ${JSON.stringify(request)}`);
+            const params = {
+                TableName: TABLE.TABLE_VEHICLE,
+                Item: request
+            };
+            const data = await documentClient.put(params).promise();
+            console.log('Inserted New Vehicle: ', data); //{}
+            if (data) return data;
+            return null;
+        } catch(err) {
+            console.log('Erro Raised 1')
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+        
     }
 
     // function to upload images of vehicle
@@ -32,6 +38,7 @@ class VehicleRepository {
             return {};
 
         } catch (err) {
+            console.log('Erro Raised 2')
             throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
 
@@ -60,8 +67,9 @@ class VehicleRepository {
                     ":id": id
                 }
             }
-            const CreatedAt_VALUE = await documentClient.scan(getSortKey).promise();
-            // console.log(typeof CreatedAt_VALUE.Items.at(0))
+            console.log('Inside Update 1')
+            let CreatedAt_VALUE = await documentClient.scan(getSortKey).promise();
+            console.log('Inside Update 2', CreatedAt_VALUE);
             const params = {
                 TableName: TABLE.TABLE_VEHICLE,
                 Key: {
@@ -73,13 +81,13 @@ class VehicleRepository {
                 ExpressionAttributeValues: expression_value,
                 ReturnValues: "UPDATED_NEW"
             };
-            // return params;
+            console.log('Inside update 3', params);
             const updateRes = await documentClient.update(params).promise();
+            console.log('Inside update 4');
 
             if (updateRes) return updateRes;
             return null;
         } catch (err) {
-            // console.log('Error Raised Here', err.message);
             throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
 
@@ -106,61 +114,27 @@ class VehicleRepository {
             } while (data.LastEvaluatedKey);
 
             const Items = scanResults;
-            // return Items
-
             var index = 0;
             for(const item of Items){
-            // Items.forEach(async (item, index) => {
-                // item.VehicleImage_ID;
                 if (item.VehicleImage_ID) {
-                    // console.log("Log 1",typeof this.VehicleImage)
                     let ImageData = await this.VehicleImage(item.VehicleImage_ID)
-                    // console.log(Imagedata,"imagedata")
                     Items[index]['IMAGES'] = ImageData;
 
                 }
-                // console.log(item.VehicleImage_ID, "log2")
                 index++;
             }
             return Items;
-            // if (Items.VehicleImage_ID.length) {
-            //     console.log("Log 1")
-
-            // }
-            // // if (offset && limit) Items = scanResults.slice(offset, limit + offset);
-            // return { Items, LastEvaluatedKey: data.LastEvaluatedKey,Imagedata, Count};
         }
         catch (err) {
             console.log('Error Raised Here', err.message);
             throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
-
-
-
-        // const Items = scanResults;
-
-        // var index = 0;
-        // for(const obj of Items) {
-        // // await Items.forEach(async (obj, index) => {
-        //     if(obj.VehicleImage_ID) {
-                
-        //         let images = await this.VehicleImage(obj.VehicleImage_ID);
-        //         Items[index]['VehcicleImages'] = images;
-        //     }
-        //     index++;
-        // }
-
-        // // if (offset && limit) Items = scanResults.slice(offset, limit + offset);
-        // return { Items, LastEvaluatedKey: data.LastEvaluatedKey, Count };
     }
     async VehicleImage(ImageID_arr) {
         // will load vehicleImage data
         try{
             var image_res = [];
             for(const image_id of ImageID_arr) {
-
-            // }
-            // ImageID_arr.forEach(async (image_id, index) => {
                 let params = {
                     TableName: TABLE.TABLE_VEHICLE_IMAGES,
                     FilterExpression: " ID = :id ",
@@ -169,25 +143,6 @@ class VehicleRepository {
                     }
                 };
 
-                // const params = {
-                //     TableName: "ResetPassword",
-                //     ProjectionExpression: ['OTP'],
-                //     FilterExpression : " ID = :id ",
-                //     ExpressionAttributeValues : {
-                //         ":id": "78c2bcfd-5345-4bca-a5f8-c92f81a297be"
-                //     }
-                // }
-                // const CreatedAt_VALUE = await documentClient.scan(getSortKey).promise();
-
-                // let params = {
-                //     TableName: "ResetPassword",
-                //     FilterExpression: " ID = :id and GeneratedAt = :GeneratedAt ",
-                //     ExpressionAttributeValues: {
-                //         ":id": "78c2bcfd-5345-4bca-a5f8-c92f81a297be",
-                //         ":GeneratedAt": "2022-03-02T08:09:06.473Z"
-                //     }
-                // };
-                // console.log('Before Log');
                 let scanResults = [];
                 let data, Count = 0;
                 do {
@@ -196,9 +151,6 @@ class VehicleRepository {
                     Count += data.Count;
                     params.ExclusiveStartKey = data.LastEvaluatedKey;
                 } while (data.LastEvaluatedKey);
-                // let data = await documentClient.scan(params).promise();
-                // console.log('AFter Log');
-                // console.log(data);
                 if(scanResults) {
                     image_res.push(scanResults[0]);
                 }
@@ -207,35 +159,59 @@ class VehicleRepository {
         } catch(err) {
             console.log('Error Raied', err.message);
         }
-        
-
-
-        // const params = {
-        //     TableName: TABLE.TABLE_VEHICLE_IMAGES
-        // };
-        // if (req.params.id) {
-        //     params.FilterExpression = "VehicleImage_ID = :id";
-        //     params.FilterExpression = "ID = :id";
-        //     params.ExpressionAttributeValues = {
-        //         ":id": req.params.id
-        //     }
-        // }
-        // // return params
-        // let scanResults = [];
-        // let data, Count = 0;
-        // do {
-        //     data = await documentClient.scan(params).promise();
-        //     scanResults.push(...data.Items);
-        //     Count += data.Count;
-        //     params.ExclusiveStartKey = data.LastEvaluatedKey;
-        // } while (data.LastEvaluatedKey);
-
-        // const Items = scanResults;
-        // // if (offset && limit) Items = scanResults.slice(offset, limit + offset);
-        // return { Items, LastEvaluatedKey: data.LastEvaluatedKey, Count };
     }
     
 
+    async bookTestDrive(request) {
+        try {
+            console.log(`New Slot Booking: ${JSON.stringify(request)}`);
+            const params = {
+                TableName: TABLE.TABLE_SLOT_BOOK,
+                Item: request
+            };
+            const data = await documentClient.put(params).promise();
+            if (data) return data;
+            return null;
+        } catch (err) {
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }
+
+
+    async addUserRating(request) {
+        try {
+            console.log(`New User Rating: ${JSON.stringify(request)}`);
+            let params = {
+                TableName: TABLE.TABLE_USER_RATING,
+                Item: request
+            };
+            const data = await documentClient.put(params).promise();
+            if (data) return data;
+            return null;
+        } catch (err) {
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }   
+
+    async calculateAvgRating(vehicleID, newRating) {
+        try {
+            let currentRating = {
+                TableName: TABLE.TABLE_VEHICLE,
+                ProjectionExpression: ['Rating'],
+                FilterExpression: " ID = :id ",
+                ExpressionAttributeValues: {
+                    ":id": vehicleID
+                }
+            }
+            let CURRENT_RATING = await documentClient.scan(currentRating).promise();
+            let PreRating = CURRENT_RATING.Items[0]?.Rating || 2.5;
+
+            return ((parseFloat(PreRating) + parseFloat(newRating)) / 2).toFixed(1) || 2.5;
+
+        } catch (err) {
+            
+        }
+    }
 
 }
 

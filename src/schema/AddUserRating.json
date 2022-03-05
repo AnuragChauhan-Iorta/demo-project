@@ -1,0 +1,56 @@
+{
+    "id": "/AddUserRating",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Add User Rating",
+    "type": "object",
+    "additionalProperties": true,
+    "required": ["ID", "CustomerID", "VehicleID", "TestDriveID", "Rating", "Comments", "CreatedAt"],
+    "properties": {
+        "ID": {
+            "type": "string",
+            "description": "Unique ID"
+        },
+        "CustomerID": {
+            "type": "string",
+            "message": {
+                "required": "Customer ID is required",
+                "pattern": "Customer ID is required"
+            }
+        },
+        "VehicleID": {
+            "type": "string",
+            "message": {
+                "required": "Vehicle ID is required",
+                "pattern": "Vehicle ID is required"
+            }
+        },
+        "TestDriveID": {
+            "type": "string",
+            "message": {
+                "required": "TestDriveID is required",
+                "pattern": "TestDriveID is required"
+            }
+        },
+        "Rating": {
+            "type": "string",
+            "message": {
+                "required": "Rating is required",
+                "pattern": "Rating is required"
+            }
+        },
+        "Comments": {
+            "type": "string",
+            "message": {
+                "required": "Comments is required",
+                "pattern": "Comments is required"
+            }
+        },
+        "CreatedAt": {
+            "type": "string",
+            "message": {
+                "required": "CreatedAt is required",
+                "pattern": "CreatedAt is required"
+            }
+        }
+    }
+}

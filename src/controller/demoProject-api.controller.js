@@ -103,5 +103,30 @@ class demoProjectApi extends base_controller {
         }
     }
 
+
+
+    async bookTestDrive(req, res) {
+        try{
+            console.log('Slot Booking');
+            const bookTestDrive = await this.vehical.bookTestDrive(req);
+            this.ok(res, bookTestDrive)
+        }catch(err) {
+            this.error(res, err);
+        }
+    }
+
+    async addUserRating(req, res) {
+        try{
+            console.log('Add User Rating');
+            const bookTestDrive = await this.vehical.addUserRating(req);
+            this.ok(res, bookTestDrive)
+        }catch(err) {
+            this.error(res, err);
+        }
+    }
+
+    
+    
+
 }
 module.exports = demoProjectApi;

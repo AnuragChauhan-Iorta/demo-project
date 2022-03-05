@@ -49,7 +49,9 @@ Resources:
       AllowedOAuthFlows:
         - client_credentials
       AllowedOAuthFlowsUserPoolClient: true
-      # AllowedOAuthScopes: # You can add your custom scopes below
+      AllowedOAuthScopes: # You can add your custom scopes below
+        - email
+        - openid
       #   - https://api.iorta.in/on-claim
       #   - https://api.iorta.in/on-payment
       #   - https://api.iorta.in/read
