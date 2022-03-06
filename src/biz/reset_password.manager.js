@@ -4,7 +4,8 @@ const ValidationError = require('../exception/validation.error');
 const msg = require('../constant/msg');
 const custom_validation_list = require('../exception/custom-exception-list');
 const InternalError = require('../exception/internal.error');
-const { SNS } = require('../services/aws.service');
+const { SNS, documentClient } = require('../services/aws.service');
+const customerRepo = require('../repository/customer.repository');
 
 const TABLE = require('../constant/table')
 
@@ -14,36 +15,49 @@ class ResetPassword{
         // super(),
         this.reset_password = new ResetPasswordRepo();
         // console.log('Log 2')
+        this.customerRepo = new customerRepo();
         this.utils = new utils();
     }
 
-    async addNewResetReq(request) {
+    async addNewResetReq({EmailID, OTP}) {
         try{
-            const sanitize_data = {
-                ID: this.utils.generateUUID(),
-                CustomerID: request.CustomerID || "",
-                OTP: request.OTP || undefined,
-                GeneratedAt: this.utils.getCurrentTime() //new Date().toISOString()
-            };
-    
-            if(!(sanitize_data.ID || sanitize_data.CustomerID || sanitize_data.OTP || sanitize_data.GeneratedAt)) {
-                throw new ValidationError(msg.VALIDATION_ERROR, `Provide all proper data {ID, CustomerID, OTP, GeneratedAt}`);
-            }   
 
-            if(!await this.reset_password.validateResetLimit(sanitize_data.CustomerID)) {
-                // password reset already requested for two times
-                throw new InternalError(msg.INTERNAL_ERROR, 'Reset Password already requested for Max limit times');
-            }
+            // let queryParam = {
+            //     TableName: TABLE.TABLE_CUSTOMER,
+            //     FilterExpression: ` EmailID = :email `,
+            //     ExpressionAttributeValues: {
+            //         ':email': EmailID
+            //     }
+            // }
             
-            const addRes = await this.reset_password.newResetRequest(sanitize_data);
-            const RespData = {
-                code: 200,
-                status: "Success",
-                response: addRes
+            let customerDetail = await this.customerRepo.getCustomerDetail(TABLE.TABLE_CUSTOMER,'ID', {EmailID: EmailID});
+            if(customerDetail.Count) {
+                const sanitize_data = {
+                    ID: this.utils.generateUUID(),
+                    CustomerID: customerDetail.Items[0].ID || "",
+                    OTP: OTP || undefined,
+                    GeneratedAt: this.utils.getCurrentTime() //new Date().toISOString()
+                };
+        
+                if(!(sanitize_data.ID || sanitize_data.CustomerID || sanitize_data.OTP || sanitize_data.GeneratedAt)) {
+                    throw new ValidationError(msg.VALIDATION_ERROR, `Provide all proper data {ID, CustomerID, OTP, GeneratedAt}`);
+                }   
+    
+                if(!await this.reset_password.validateResetLimit(sanitize_data.CustomerID)) {
+                    // password reset already requested for two times
+                    throw new InternalError(msg.INTERNAL_ERROR, 'Reset Password already requested for Max limit times');
+                }
+                
+                const addRes = await this.reset_password.newResetRequest(sanitize_data);
+                const RespData = {
+                    code: 200,
+                    status: "Success",
+                    data: addRes,
+                    customerID: sanitize_data.CustomerID
+                }
+                return RespData;
             }
-            return RespData;
-            if(addRes) return addRes;
-            return null;
+            throw new InternalError(msg.INTERNAL_ERROR, "Invalid Email ID");
 
         } catch(err) {
             // console.log(err.message);
@@ -58,17 +72,29 @@ class ResetPassword{
     /**
      * 
      * @param {*} request.OTP | {4 digit numbers}
-     * @param {*} request.CustomerID | string
+     * @param {*} request.EmailID | string
+     * @param {*} request.NewPassword | string
      */
     async validateOTP(req, res) {
         try{
             const new_password = req.body.NewPassword;
+            let EmailID = req.body.EmailID || undefined;
+            if(!EmailID) {
+                throw new ValidationError(msg.VALIDATION_ERROR, "EmailID required");
+            }
+            // get Customer ID
+            let customerDetail = await this.customerRepo.getCustomerDetail(TABLE.TABLE_CUSTOMER, "ID", {EmailID: EmailID})
+            
+            if(!(customerDetail.Count > 0)) {
+                throw new InternalError(msg.INTERNAL_ERROR, "Invalid EmailID");
+            }
+            var CustomerID = customerDetail.Items[0].ID;
             const sanitize_data = {
                 OTP: req.body.OTP || undefined,
-                CustomerID: req.body.CustomerID || undefined
+                CustomerID: CustomerID || undefined
                 // NewPassword: req.body.Password || 
             };
-            if(parseInt(sanitize_data.OTP).toString().length === 4 && typeof sanitize_data.CustomerID === 'string' && new_password){
+            if(parseInt(sanitize_data.OTP).toString().length === 4 && new_password){
                 var data = await this.reset_password.validateOTP(sanitize_data);
                 // return data;
                 console.log('OTP Received', data?.OTP);
@@ -105,7 +131,7 @@ class ResetPassword{
             //     let data = await this.reset_password.validateOTP(sanitize_data);
             //     return data;
             // }
-            throw new InternalError(msg.INTERNAL_ERROR, 'Invalid Body passed {OTP, CustomerID, NewPassword}')
+            throw new InternalError(msg.INTERNAL_ERROR, 'Invalid Body passed {OTP, NewPassword}')
         } catch (err) {
             if(custom_validation_list.includes(err.name || "")) {
                 throw err;
@@ -114,25 +140,24 @@ class ResetPassword{
         }
     }
     
-    async resetPassword(req, res) {
+    async forgetPassword(req, res) {
         try{
-            if(!req.body.EmailID || !req.body.CustomerID){
-                throw new ValidationError(msg.VALIDATION_ERROR, "CustomerID Or EmailID is required")
+            if(!req.body.EmailID){
+                throw new ValidationError(msg.VALIDATION_ERROR, "EmailID is required")
             }
-            let sanitize_data = {
-                EmailId: req.body.EmailID,
-                CustomerID: req.body.CustomerID
-            };
+            // let sanitize_data = {
+            //     EmailId: req.body.EmailID
+            // };
 
             var otp = await Math.floor(1000 + Math.random() * 9000);
 
-            let InsertionData = {
-                'ID': this.utils.generateUUID(),
-                'CustomerID': sanitize_data.CustomerID,
-                'OTP': otp,
-                'GeneratedAt': this.utils.getCurrentTime() //new Date().toISOString()
-            };
-            var resp = await this.addNewResetReq(InsertionData);
+            // let InsertionData = {
+            //     'ID': this.utils.generateUUID(),
+            //     'CustomerID': sanitize_data.CustomerID,
+            //     'OTP': otp,
+            //     'GeneratedAt': this.utils.getCurrentTime() //new Date().toISOString()
+            // };
+            var resp = await this.addNewResetReq({EmailID:req.body.EmailID, OTP: otp });
 
             var RespData = {
                 code: 200,
@@ -141,7 +166,8 @@ class ResetPassword{
             }
 
             if(resp?.status == 'Success') {
-                const response = await this.reset_password.resetPassword({...sanitize_data,otp:otp});
+                let passedObj = {EmailID:req.body.EmailID, CustomerID: resp.CustomerID, otp:otp }
+                const response = await this.reset_password.forgetPassword(passedObj);
                 RespData['response'] = {...response, message: "OTP Sent Successfully"};
             } else {
                 throw resp;
@@ -159,6 +185,36 @@ class ResetPassword{
             throw new InternalError(msg.INTERNAL_ERROR, err.message);
         }
         
+    }
+
+
+
+    async resetPassword(req, res) {
+        try{
+            const sanitize_data = {
+                OldPassword: req.body.OldPassword || undefined,
+                NewPassword: req.body.NewPassword || undefined,
+                EmailID: req.body.EmailID || undefined 
+            };  
+            if(sanitize_data.OldPassword && sanitize_data.NewPassword && sanitize_data.EmailID) {
+                let resp = this.reset_password.resetPassword(sanitize_data);
+                // return resp;
+                if(resp) {
+                    let response = {
+                        code: 200,
+                        status: "Success",
+                        data: "Password Changed Successfully"
+                    };
+                    return response;
+                }
+            }
+            throw new ValidationError(msg.VALIDATION_ERROR, "Invalid Body {OldPassword, NewPassword, Email}")
+        }catch(err) {
+            if(custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
     }
 
     

@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const TABLE = require("../constant/table");
 const custom_validation_list = require('../exception/custom-exception-list');
 const ValidationError = require('../exception/validation.error')
@@ -145,7 +146,7 @@ class ResetPassword {
         }
     }
 
-    async resetPassword({EmailID, CustomerID, otp}) {
+    async forgetPassword({EmailID, CustomerID, otp}) {
         try{
             
             let customerDetail = await this.customer_repository.getCustomerDetail(
@@ -178,28 +179,48 @@ class ResetPassword {
                     }
                 }
             };
-            // console.log(params.PhoneNumber);
 
             let resp = await SNS.publish(params).promise();
-            // console.log(resp?.MessageId);
-            // console.log('OUTSIDE');
-            
-
             return resp;
-            // console.log(tempRes);
-            // return {
-            //     code: 200,
-            //     status: "Success",
-            //     data: tempRes
-            // };
-            // // this.sns_service.publish(process.env.SNS_TOPIC, 
-            // //     JSON.stringify({}))
 
         }catch(err) {
-            // console.log('Error Occured');
-            // console.log(err);
-            // console.log('Message Sent Error', err.message);
-            // throw new InternalError(msg.INTERNAL_ERROR, err.message);
+            if(custom_validation_list.includes(err.name || "")) {
+                throw err;
+            }
+            throw new InternalError(msg.INTERNAL_ERROR, err.message);
+        }
+    }
+
+    async resetPassword(request) {
+        try {
+            /**
+             * 1.First get Customer Detail by Email
+             * 2.Compare OldPassword
+             * 3.Replace NewPassword 
+             *  */   
+            let customerByEmailParam = {
+                TableName: TABLE.TABLE_CUSTOMER,
+                FilterExpression : " EmailID = :email ",
+                ExpressionAttributeValues : {
+                    ":email": request.EmailID
+                } 
+            };
+            // return customerByEmailParam;
+            var customerDetail = await documentClient.scan(customerByEmailParam).promise();
+            // return customerDetail;
+            if(customerDetail.Count) {
+                if(bcrypt.compareSync(request.OldPassword, customerDetail.Items[0].Password )) {
+                    // update new Password
+                    let newHashPassword = this.utils.generatePassword(request.NewPassword);
+                    let updateResp = await this.updatePassword({CustomerID: customerDetail.Items[0].ID, NewPassword: newHashPassword});
+                    if(updateResp) return updateResp;
+                    return null;
+                }
+                throw new InternalError(msg.INTERNAL_ERROR, "Old Password not matched");
+            }
+            throw new InternalError(msg.INTERNAL_ERROR, "EmailID not found")
+            
+        } catch (err) {
             if(custom_validation_list.includes(err.name || "")) {
                 throw err;
             }

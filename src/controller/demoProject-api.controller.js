@@ -59,7 +59,17 @@ class demoProjectApi extends base_controller {
             // authenticated = {test: "abcd"}
             this.ok(res, updateRes);
         } catch (err) {
-            this.error(res, err); 
+            this.error(res, err);  
+        }
+    }
+
+    async forgetPassword(req, res) {
+        try {
+            console.log("Forget Password Request..");
+            const forgetPassword = await this.reset_password.forgetPassword(req, res);
+            this.ok(res, forgetPassword);
+        } catch (err) {
+            this.error(res, err);
         }
     }
 
