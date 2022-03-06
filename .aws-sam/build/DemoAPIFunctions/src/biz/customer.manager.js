@@ -1,5 +1,5 @@
 'use strict';
-
+const AWS_S3 = require('../services/s3.services');
 const utils = require('../constant/utils');
 const bcrypt = require('bcryptjs');
 const BaseManager = require('./base.manager');
@@ -11,12 +11,15 @@ const SCHEMA = require('../constant/schema');
 const MSG = require("../constant/msg");
 const custom_validation_list = require('../exception/custom-exception-list');
 const req = require('express/lib/request');
+const URL = require('../constant/url');
+const fs = require('fs');
 
 class Customer extends BaseManager {
     constructor(){
         super();
         this.CustomerRepository = new customer_repository();
         this.utils = new utils();
+        this.aws_s3 = new AWS_S3();
     }
 
     async getCustomerList(req) {
@@ -81,11 +84,33 @@ class Customer extends BaseManager {
             
             if(validationResult.valid) {
                 const response = await this.CustomerRepository.addCustomer(sanitize_data);
+                
+                if(!response){
+                    throw new InternalError(MSG.INTERNAL_ERROR, "Unable to add customer")
+                }
+
+                var customerProfileDetail;
+                var file_Key;
+                if(req.file){
+                    // upload customer Profile to S3 bucket
+                    let fileKey = req.file.filename;
+                    let body = fs.createReadStream(req.file.path);
+                    let contentType = req.file.mimetype;
+                    
+                    let s3_file_upload = await this.aws_s3.upload(fileKey, body, contentType);
+                    customerProfileDetail = s3_file_upload;
+                    file_Key = fileKey;
+                }
+
+                if(file_Key) {
+                    var detailUpdateResp = await this.CustomerRepository.updateCustomer({CustomerProfileImage:customerProfileDetail.Location}, sanitize_data.ID);
+                }
+
                 const RespData = {
                     code: 200,
                     status: "Success",
-                    data: sanitize_data,
-                    response: response
+                    data: "Customer Added Successfully",
+                    profileImage: customerProfileDetail
                 }
                 return RespData;
             }

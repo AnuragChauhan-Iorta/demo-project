@@ -6,24 +6,14 @@ const helmet = require("helmet");
 const cors = require('cors');
 require("dotenv").config();
 const multer = require('multer');
-const path = require('path');
-const storage = multer.memoryStorage();
-const img_validate_ext = require('./constant/image_ext_list');
 
-const temp = require('../src/repository/reset_password.repository')
 
-const base64_upload = multer({ 
-    limits: { fileSize: 2 * 1024 * 1024 }, 
-    storage: storage,
-    fileFilter: (req, file, cb) => {
-        if (img_validate_ext.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(null, false);
-          return cb(new Error('Only .png, .jpg, .jpeg and .webp format allowed!'));
-        }
-      }    
- });
+const { physicalFileUpload, base64FileUpload } = require('./services/multer.service');
+// const temp = require('../src/repository/reset_password.repository')
+
+const base64_upload = base64FileUpload;
+
+
 
 //body parser 
 // app.use(bodyParser.text());
@@ -40,13 +30,13 @@ const {
 } = require("./controller/index.js");
 
 // get Customers/specific customer
-app.get('/customer/:id?', demoProjectApi.getCustomerList);
+app.get('/customer/:id?' ,demoProjectApi.getCustomerList);
 
 // update Customer details
 app.post('/updateCustomer', demoProjectApi.updateCustomerDetail );
 
 // add new customer
-app.post('/AddCustomer', demoProjectApi.addNewCustomer);
+app.post('/AddCustomer', physicalFileUpload.single('CustomerProfile'), demoProjectApi.addNewCustomer);
 
 // validate user login
 app.post('/validateLogin', demoProjectApi.validateLogin );
@@ -65,10 +55,10 @@ app.get('/vehicle/customer/:id?', demoProjectApi.getVehicleList);
 app.get('/vehicleDetails/:id', demoProjectApi.getVehicleById);
 
 
-app.get('/temp/:id',async (req, res) => {
-  const resp = await new temp().validateResetLimit(req.params.id);
-  res.send(resp);
-});
+// app.get('/temp/:id',async (req, res) => {
+//   const resp = await new temp().validateResetLimit(req.params.id);
+//   res.send(resp);
+// });
 
 
 

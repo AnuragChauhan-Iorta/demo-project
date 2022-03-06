@@ -191,11 +191,6 @@ class CustomerRepository{
     async getCustomerDetail(table_name = TABLE.TABLE_CUSTOMER, projectionItemsArr, conditionItemsObj) {
         try{
             var {expression_list, expression_name, expression_value} = await this.utils.santize_expression_obj(conditionItemsObj);
-        
-            // console.log(expression_list);
-            // console.log(expression_name);
-            // console.log(expression_value);
-            
 
             const params = {
                 TableName: table_name,

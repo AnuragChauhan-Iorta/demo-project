@@ -85,6 +85,7 @@ Resources:
       - Statement:
           Effect: Allow
           Action:
+          - s3:GetObject
           - s3:PutObject
           - dynamodb:PutItem
           - dynamodb:GetItem
