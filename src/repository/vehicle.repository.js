@@ -267,7 +267,6 @@ class VehicleRepository {
         }
     }
 
-
     async addUserRating(request) {
         try {
             console.log(`New User Rating: ${JSON.stringify(request)}`);

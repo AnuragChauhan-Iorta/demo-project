@@ -1,3 +1,5 @@
+//Table Configuration added
+
 module.exports = {
     TABLE_CUSTOMER: "Customer",
     TABLE_VEHICLE: "Vehicle",
